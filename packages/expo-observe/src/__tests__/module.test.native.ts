@@ -20,6 +20,16 @@ jest.mock('../integrations/expo-router/init', () => ({
   initListeners: jest.fn(() => () => {}),
 }));
 
+jest.mock('../integrations/react-navigation/reactNavigation', () => ({
+  isReactNavigationInstalled: true,
+  optionalReactNavigation: undefined,
+}));
+
+jest.mock('../integrations/react-navigation/init', () => ({
+  initReactNavigationIntegration: jest.fn(),
+  isInitialized: jest.fn(() => false),
+}));
+
 beforeEach(() => {
   jest.clearAllMocks();
   jest.resetModules();
@@ -33,6 +43,14 @@ beforeEach(() => {
     isInitialized: jest.fn(() => false),
     initListeners: jest.fn(() => () => {}),
   }));
+  jest.doMock('../integrations/react-navigation/reactNavigation', () => ({
+    isReactNavigationInstalled: true,
+    optionalReactNavigation: undefined,
+  }));
+  jest.doMock('../integrations/react-navigation/init', () => ({
+    initReactNavigationIntegration: jest.fn(),
+    isInitialized: jest.fn(() => false),
+  }));
 });
 
 function loadModule() {
@@ -41,6 +59,10 @@ function loadModule() {
 
 function loadInit() {
   return require('../integrations/expo-router/init') as typeof import('../integrations/expo-router/init');
+}
+
+function loadReactNavigationInit() {
+  return require('../integrations/react-navigation/init') as typeof import('../integrations/react-navigation/init');
 }
 
 describe('module Proxy', () => {
@@ -84,6 +106,10 @@ describe('module Proxy', () => {
       isRouterInstalled: false,
       optionalRouter: undefined,
     }));
+    jest.doMock('../integrations/react-navigation/reactNavigation', () => ({
+      isReactNavigationInstalled: false,
+      optionalReactNavigation: undefined,
+    }));
     const ExpoObserve = loadModule();
     const { initRouterIntegration } = loadInit();
     ExpoObserve.configure({ integrations: { 'expo-router': true } });
@@ -91,6 +117,63 @@ describe('module Proxy', () => {
     expect(mockNative.configure).toHaveBeenCalledWith({
       integrations: { 'expo-router': true },
     });
+  });
+
+  it("calls initReactNavigationIntegration when integrations['react-navigation'] is true and react-navigation is installed", () => {
+    const ExpoObserve = loadModule();
+    const { initReactNavigationIntegration } = loadReactNavigationInit();
+    ExpoObserve.configure({
+      environment: 'test',
+      integrations: { 'react-navigation': true },
+    });
+    expect(initReactNavigationIntegration).toHaveBeenCalledTimes(1);
+  });
+
+  it("initializes react-navigation even when expo-router is installed, as long as 'react-navigation' is the only flag set", () => {
+    const ExpoObserve = loadModule();
+    const { initRouterIntegration } = loadInit();
+    const { initReactNavigationIntegration } = loadReactNavigationInit();
+    ExpoObserve.configure({
+      environment: 'test',
+      integrations: { 'react-navigation': true },
+    });
+    expect(initRouterIntegration).not.toHaveBeenCalled();
+    expect(initReactNavigationIntegration).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT call initReactNavigationIntegration when both flags are true', () => {
+    const ExpoObserve = loadModule();
+    const { initRouterIntegration } = loadInit();
+    const { initReactNavigationIntegration } = loadReactNavigationInit();
+    ExpoObserve.configure({
+      environment: 'test',
+      integrations: { 'expo-router': true, 'react-navigation': true },
+    });
+    expect(initRouterIntegration).toHaveBeenCalledTimes(1);
+    expect(initReactNavigationIntegration).not.toHaveBeenCalled();
+  });
+
+  it('skips initReactNavigationIntegration when react-navigation is not installed', () => {
+    jest.doMock('../integrations/react-navigation/reactNavigation', () => ({
+      isReactNavigationInstalled: false,
+      optionalReactNavigation: undefined,
+    }));
+    const ExpoObserve = loadModule();
+    const { initReactNavigationIntegration } = loadReactNavigationInit();
+    ExpoObserve.configure({
+      environment: 'test',
+      integrations: { 'react-navigation': true },
+    });
+    expect(initReactNavigationIntegration).not.toHaveBeenCalled();
+  });
+
+  it('skips both integrations by default', () => {
+    const ExpoObserve = loadModule();
+    const { initRouterIntegration } = loadInit();
+    const { initReactNavigationIntegration } = loadReactNavigationInit();
+    ExpoObserve.configure({ environment: 'test' });
+    expect(initRouterIntegration).not.toHaveBeenCalled();
+    expect(initReactNavigationIntegration).not.toHaveBeenCalled();
   });
 
   it('passes through dispatchEvents and setBundleDefaults to native', () => {

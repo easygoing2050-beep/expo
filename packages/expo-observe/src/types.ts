@@ -53,6 +53,7 @@ export type Config = {
 
 export interface IntegrationsConfig {
   'expo-router'?: boolean;
+  'react-navigation'?: boolean;
 }
 
 export interface ExpoObserveModuleType {
