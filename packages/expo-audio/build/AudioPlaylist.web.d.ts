@@ -1,4 +1,5 @@
-import type { AudioPlaylistLoopMode, AudioPlaylistStatus, AudioSource, AudioSourceInfo } from './Audio.types';
+import type { AudioMetadata, AudioPlaylistLoopMode, AudioPlaylistStatus, AudioSource, AudioSourceInfo } from './Audio.types';
+import type { AudioLockScreenOptions } from './AudioConstants';
 import type { AudioPlaylist, AudioPlaylistEvents } from './AudioModule.types';
 export declare class AudioPlaylistWeb extends globalThis.expo.SharedObject<AudioPlaylistEvents> implements AudioPlaylist {
     constructor(initialSources?: AudioSource[], updateInterval?: number, loopMode?: AudioPlaylistLoopMode, crossOrigin?: 'anonymous' | 'use-credentials');
@@ -46,6 +47,9 @@ export declare class AudioPlaylistWeb extends globalThis.expo.SharedObject<Audio
     remove(index: number): void;
     clear(): void;
     destroy(): void;
+    setActiveForLockScreen(active: boolean, metadata?: AudioMetadata, options?: AudioLockScreenOptions): void;
+    updateLockScreenMetadata(metadata: AudioMetadata): void;
+    clearLockScreenControls(): void;
     private _transitionToTrack;
     private _preloadNext;
     private _cleanupMedia;
@@ -54,5 +58,6 @@ export declare class AudioPlaylistWeb extends globalThis.expo.SharedObject<Audio
     private _handleTrackEnded;
     private _getStatus;
     private _emitStatus;
+    private _updateMediaSession;
 }
 //# sourceMappingURL=AudioPlaylist.web.d.ts.map

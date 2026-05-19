@@ -4,6 +4,8 @@ interface MediaSessionPlayer {
     play(): void;
     pause(): void;
     seekTo(seconds: number): Promise<void>;
+    next?(): void;
+    previous?(): void;
     readonly playing: boolean;
     readonly currentTime: number;
     readonly duration: number;

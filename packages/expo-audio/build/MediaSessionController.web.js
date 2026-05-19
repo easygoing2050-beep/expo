@@ -136,18 +136,32 @@ class MediaSessionController {
         };
         if (this.options?.showSeekForward === true) {
             this._setHandler('seekforward', seekForward);
-            this._setHandler('nexttrack', seekForward);
         }
         else {
             this._setHandler('seekforward', null);
-            this._setHandler('nexttrack', null);
         }
         if (this.options?.showSeekBackward === true) {
             this._setHandler('seekbackward', seekBackward);
-            this._setHandler('previoustrack', seekBackward);
         }
         else {
             this._setHandler('seekbackward', null);
+        }
+        if (this.options?.showNextTrack === true && player.next) {
+            this._setHandler('nexttrack', () => {
+                player.next?.();
+                this.updatePositionState(player);
+            });
+        }
+        else {
+            this._setHandler('nexttrack', null);
+        }
+        if (this.options?.showPreviousTrack === true && player.previous) {
+            this._setHandler('previoustrack', () => {
+                player.previous?.();
+                this.updatePositionState(player);
+            });
+        }
+        else {
             this._setHandler('previoustrack', null);
         }
     }

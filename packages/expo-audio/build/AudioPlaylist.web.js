@@ -1,5 +1,6 @@
 import { PLAYLIST_STATUS_UPDATE, TRACK_CHANGED } from './AudioEventKeys';
 import { getSourceUri, nextId } from './AudioUtils.web';
+import { mediaSessionController } from './MediaSessionController.web';
 import { resolveSource } from './utils/resolveSource';
 function getSourceInfo(source) {
     const resolved = resolveSource(source);
@@ -249,7 +250,22 @@ export class AudioPlaylistWeb extends globalThis.expo.SharedObject {
         this._emitStatus();
     }
     destroy() {
+        mediaSessionController.clear(this);
         this.clear();
+    }
+    setActiveForLockScreen(active, metadata, options) {
+        if (active) {
+            mediaSessionController.setActivePlayer(this, metadata, options);
+        }
+        else {
+            mediaSessionController.clear(this);
+        }
+    }
+    updateLockScreenMetadata(metadata) {
+        mediaSessionController.updateMetadata(this, metadata);
+    }
+    clearLockScreenControls() {
+        mediaSessionController.clear(this);
     }
     _transitionToTrack(newIndex, previousIndex) {
         const wasPlaying = this._isPlaying;
@@ -427,6 +443,7 @@ export class AudioPlaylistWeb extends globalThis.expo.SharedObject {
             }
             else {
                 this._isPlaying = false;
+                this._updateMediaSession();
                 this.emit(PLAYLIST_STATUS_UPDATE, {
                     ...this._getStatus(),
                     didJustFinish: true,
@@ -456,6 +473,11 @@ export class AudioPlaylistWeb extends globalThis.expo.SharedObject {
     }
     _emitStatus() {
         this.emit(PLAYLIST_STATUS_UPDATE, this._getStatus());
+        this._updateMediaSession();
+    }
+    _updateMediaSession() {
+        mediaSessionController.updatePlaybackState(this);
+        mediaSessionController.updatePositionState(this);
     }
 }
 //# sourceMappingURL=AudioPlaylist.web.js.map

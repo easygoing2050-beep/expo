@@ -6,6 +6,8 @@
 
 ### 🎉 New features
 
+- Support lockscreen controls with playlists. ([#46020](https://github.com/expo/expo/pull/46020) by [@alanjhughes](https://github.com/alanjhughes))
+
 ### 🐛 Bug fixes
 
 ### 💡 Others
