@@ -1,11 +1,12 @@
 import AppMetrics from 'expo-app-metrics';
-import { useObserve } from 'expo-observe';
+import ExpoObserve, { useObserve } from 'expo-observe';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { CrashReportsSection } from '@/components/CrashReportsSection';
 import { Divider } from '@/components/Divider';
+import { GlobalAttributesSection } from '@/components/GlobalAttributesSection';
 import { JSAnimation } from '@/components/JSAnimation';
 import { LogEventsSection } from '@/components/LogEventsSection';
 import { useTheme } from '@/utils/theme';
@@ -26,6 +27,8 @@ export default function Debug() {
     <ScrollView
       style={{ backgroundColor: theme.background.screen }}
       contentContainerStyle={styles.container}>
+      <GlobalAttributesSection />
+      {typeof ExpoObserve.setGlobalAttributes === 'function' ? <Divider /> : null}
       <LogEventsSection />
       {typeof AppMetrics.logEvent === 'function' ? <Divider /> : null}
       <CrashReportsSection />

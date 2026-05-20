@@ -6,6 +6,8 @@ import expo.modules.appmetrics.AppMetadata
 import expo.modules.appmetrics.AppMetricsPreferences
 import expo.modules.appmetrics.SQLITE_MAX_BIND_VARIABLES
 import expo.modules.appmetrics.TAG
+import expo.modules.appmetrics.GlobalAttributes
+import expo.modules.appmetrics.utils.JsonAny
 import expo.modules.appmetrics.utils.TimeUtils
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
@@ -94,7 +96,12 @@ class SessionManager(
     metrics: List<Metric>,
     sessionId: String
   ) {
-    val metricsWithSession = metrics.map { it.copy(sessionId = sessionId) }
+    val metricsWithSession = metrics.map { metric ->
+      metric.copy(
+        sessionId = sessionId,
+        params = mergeGlobalsIntoJson(metric.params)
+      )
+    }
     database.metricDao().insertAll(metricsWithSession)
     val metricIds = metricsWithSession.map { it.metricId }
     metricsInsertListeners.forEach { listener ->
@@ -131,7 +138,12 @@ class SessionManager(
     logs: List<LogRecord>,
     sessionId: String
   ) {
-    val logsWithSession = logs.map { it.copy(sessionId = sessionId) }
+    val logsWithSession = logs.map { log ->
+      log.copy(
+        sessionId = sessionId,
+        attributes = mergeGlobalsIntoJson(log.attributes)
+      )
+    }
     database.logDao().insertAll(logsWithSession)
     val logIds = logsWithSession.map { it.logId }
     logsInsertListeners.forEach { listener ->
@@ -141,6 +153,22 @@ class SessionManager(
         Log.e(TAG, "LogsInsertListener failed", e)
       }
     }
+  }
+
+  /**
+   * Merges caller-set global attributes (`GlobalAttributes.set`) into the given
+   * JSON-encoded params/attributes map. Returns the re-encoded JSON string
+   * with globals folded in, or the original string when globals are empty.
+   * Per-record keys win over globals on collision.
+   *
+   * Called from the storage funnel so every metric and log source — internal
+   * SDK producers, JS-injected payloads, the JS `logEvent` path — picks up
+   * the same enrichment.
+   */
+  private fun mergeGlobalsIntoJson(existingJson: String?): String? {
+    val existing = existingJson?.let { JsonAny.decodeJsonStringToMap(it) }
+    val merged = GlobalAttributes.merged(existing) ?: return existingJson
+    return JsonAny.encodeMapToJsonString(merged)
   }
 
   suspend fun cleanupOldLogs() {
