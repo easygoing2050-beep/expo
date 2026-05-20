@@ -106,7 +106,7 @@ export function useObserveForRouter(): MarkInteractive | null {
           routeName: pathname,
           name: 'tti',
           value: interactiveTimeSeconds,
-          params: { routeParams },
+          params: { isAppLaunch: !!currentScreenData.isAppLaunch, routeParams },
         });
       }
     },

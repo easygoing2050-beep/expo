@@ -71,7 +71,7 @@ beforeEach(() => {
 
 describe('useObserveForRouter', () => {
   it('records TTI from dispatchTime on the first call when focused', async () => {
-    storage.screenTimes['screen-a'] = { dispatchTime: 1000 };
+    storage.screenTimes['screen-a'] = { dispatchTime: 1000, isAppLaunch: false };
     jest.spyOn(performance, 'now').mockReturnValue(1300);
 
     const { result } = renderHook(() => useObserveForRouter(), { wrapper: wrapper(storage) });
@@ -87,12 +87,30 @@ describe('useObserveForRouter', () => {
       routeName: '/test',
       name: 'tti',
       value: 0.3,
-      params: { routeParams: { x: '1' } },
+      params: { isAppLaunch: false, routeParams: { x: '1' } },
     });
   });
 
+  it('records TTI with isAppLaunch=true when the initial screen was seeded by app launch', async () => {
+    storage.screenTimes['screen-a'] = { dispatchTime: 1000, isAppLaunch: true };
+    jest.spyOn(performance, 'now').mockReturnValue(1300);
+
+    const { result } = renderHook(() => useObserveForRouter(), { wrapper: wrapper(storage) });
+    await act(async () => {
+      await result.current!();
+    });
+
+    expect(mockAddCustomMetric).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'tti',
+        value: 0.3,
+        params: { isAppLaunch: true, routeParams: { x: '1' } },
+      })
+    );
+  });
+
   it('calls AppMetrics.markInteractive when the screen is focused', async () => {
-    storage.screenTimes['screen-a'] = { dispatchTime: 1000 };
+    storage.screenTimes['screen-a'] = { dispatchTime: 1000, isAppLaunch: false };
     const { result } = renderHook(() => useObserveForRouter(), { wrapper: wrapper(storage) });
     const arg = { params: { x: 'payload' } };
     await act(async () => {
@@ -103,7 +121,7 @@ describe('useObserveForRouter', () => {
 
   it('does not call AppMetrics.markInteractive when the screen is not focused, but still computes TTI', async () => {
     mockUseNavigation.mockReturnValue({ isFocused: () => false });
-    storage.screenTimes['screen-a'] = { dispatchTime: 1000 };
+    storage.screenTimes['screen-a'] = { dispatchTime: 1000, isAppLaunch: false };
     jest.spyOn(performance, 'now').mockReturnValue(1300);
 
     const { result } = renderHook(() => useObserveForRouter(), { wrapper: wrapper(storage) });
@@ -119,7 +137,7 @@ describe('useObserveForRouter', () => {
       routeName: '/test',
       name: 'tti',
       value: 0.3,
-      params: { routeParams: { x: '1' } },
+      params: { isAppLaunch: false, routeParams: { x: '1' } },
     });
   });
 
